@@ -264,7 +264,6 @@ export function StudyTimePage() {
                     key={sound.id}
                     variant={currentSound?.id === sound.id ? "default" : "ghost"}
                     onClick={() => toggleSound(sound)}
-                    disabled={isSoundLoading}
                     className="w-full justify-start"
                   >
                     <span className="mr-2">{sound.icon}</span>

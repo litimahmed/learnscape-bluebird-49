@@ -50,6 +50,9 @@ export const useAmbientSounds = () => {
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const volumeRef = useRef(volume);
+  const playIdRef = useRef(0);
+  const pendingAudioRef = useRef<HTMLAudioElement | null>(null);
+  const loadTimeoutRef = useRef<number | null>(null);
 
   // Keep volume ref in sync
   useEffect(() => {
@@ -59,8 +62,19 @@ export const useAmbientSounds = () => {
   // Cleanup on unmount
   useEffect(() => {
     return () => {
+      // cancel any pending operations
+      playIdRef.current++;
+      if (loadTimeoutRef.current !== null) {
+        clearTimeout(loadTimeoutRef.current);
+        loadTimeoutRef.current = null;
+      }
+      if (pendingAudioRef.current) {
+        try { pendingAudioRef.current.pause(); } catch {}
+        pendingAudioRef.current.src = '';
+        pendingAudioRef.current = null;
+      }
       if (audioRef.current) {
-        audioRef.current.pause();
+        try { audioRef.current.pause(); } catch {}
         audioRef.current.src = '';
         audioRef.current = null;
       }
@@ -68,23 +82,54 @@ export const useAmbientSounds = () => {
   }, []);
 
   const stopSound = useCallback(() => {
+    // Invalidate any pending playback
+    playIdRef.current++;
+
+    // Clear any scheduled retry
+    if (loadTimeoutRef.current !== null) {
+      clearTimeout(loadTimeoutRef.current);
+      loadTimeoutRef.current = null;
+    }
+
+    // Stop pending audio (not yet started)
+    if (pendingAudioRef.current) {
+      try { pendingAudioRef.current.pause(); } catch {}
+      pendingAudioRef.current.currentTime = 0;
+      pendingAudioRef.current.src = '';
+      pendingAudioRef.current = null;
+    }
+
+    // Stop active audio
     if (audioRef.current) {
-      audioRef.current.pause();
+      try { audioRef.current.pause(); } catch {}
       audioRef.current.currentTime = 0;
       audioRef.current.src = '';
       audioRef.current = null;
     }
+
     setIsPlaying(false);
     setCurrentSound(null);
     setIsLoading(false);
   }, []);
 
   const playSound = useCallback(async (sound: AmbientSound) => {
-    if (isLoading) return; // Prevent multiple simultaneous loads
+    // Invalidate any previous pending play and mark this call
+    const thisPlayId = ++playIdRef.current;
 
     setIsLoading(true);
 
-    // Clean up existing audio
+    // Clear any scheduled retry from previous attempts
+    if (loadTimeoutRef.current !== null) {
+      clearTimeout(loadTimeoutRef.current);
+      loadTimeoutRef.current = null;
+    }
+
+    // Stop and clear any existing/pending audio
+    if (pendingAudioRef.current) {
+      try { pendingAudioRef.current.pause(); } catch {}
+      pendingAudioRef.current.src = '';
+      pendingAudioRef.current = null;
+    }
     if (audioRef.current) {
       try { audioRef.current.pause(); } catch {}
       audioRef.current.src = '';
@@ -97,22 +142,35 @@ export const useAmbientSounds = () => {
       audio.preload = 'auto';
       audio.loop = true;
       audio.volume = volumeRef.current;
+      pendingAudioRef.current = audio;
 
       let started = false;
       const startPlayback = () => {
         if (started) return;
+        if (playIdRef.current !== thisPlayId) return; // cancelled/switched
         audio.play().then(() => {
+          if (playIdRef.current !== thisPlayId) {
+            // Play succeeded but already cancelled
+            try { audio.pause(); } catch {}
+            return;
+          }
           started = true;
           audioRef.current = audio;
+          pendingAudioRef.current = null;
           setCurrentSound(sound);
           setIsPlaying(true);
           setIsLoading(false);
+          if (loadTimeoutRef.current !== null) {
+            clearTimeout(loadTimeoutRef.current);
+            loadTimeoutRef.current = null;
+          }
         }).catch(() => {
           // Will retry on 'canplay' or timeout
         });
       };
 
       const handleError = () => {
+        if (playIdRef.current !== thisPlayId) return;
         console.error('Error loading sound:', sound.audioUrl);
         setIsLoading(false);
       };
@@ -128,23 +186,24 @@ export const useAmbientSounds = () => {
       startPlayback();
 
       // Short retry to reduce perceived lag if 'canplay' is slow
-      setTimeout(() => startPlayback(), 300);
+      loadTimeoutRef.current = window.setTimeout(() => startPlayback(), 300);
 
     } catch (error) {
+      if (playIdRef.current !== thisPlayId) return;
       console.error('Error setting up ambient sound:', error);
       setIsLoading(false);
     }
-  }, [isLoading]);
+  }, []);
 
   const toggleSound = useCallback((sound: AmbientSound) => {
-    if (isLoading) return;
-
+    // If same sound is playing, stop it
     if (isPlaying && currentSound?.id === sound.id) {
       stopSound();
-    } else {
-      playSound(sound);
+      return;
     }
-  }, [isPlaying, currentSound, isLoading, playSound, stopSound]);
+    // Otherwise start (this will cancel any pending/active audio safely)
+    playSound(sound);
+  }, [isPlaying, currentSound, playSound, stopSound]);
 
   const changeVolume = useCallback((newVolume: number) => {
     setVolume(newVolume);
