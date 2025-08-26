@@ -42,75 +42,106 @@ const AMBIENT_SOUNDS: AmbientSound[] = [
 export const useAmbientSounds = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentSound, setCurrentSound] = useState<AmbientSound | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [volume, setVolume] = useState(() => {
     const savedVolume = localStorage.getItem('ambientSoundVolume');
     return savedVolume ? parseFloat(savedVolume) : 0.3;
   });
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const volumeRef = useRef(volume);
+
+  // Keep volume ref in sync
+  useEffect(() => {
+    volumeRef.current = volume;
+  }, [volume]);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      stopSound();
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = '';
+        audioRef.current = null;
+      }
     };
   }, []);
 
-  const playSound = useCallback(async (sound: AmbientSound) => {
-    try {
-      // Stop current sound
-      stopSound();
-
-      // Create new audio element
-      const audio = new Audio(sound.audioUrl);
-      audio.loop = true;
-      audio.volume = volume;
-      
-      // Wait for audio to be ready
-      await new Promise((resolve, reject) => {
-        audio.oncanplaythrough = resolve;
-        audio.onerror = reject;
-        audio.load();
-      });
-
-      // Play the audio
-      await audio.play();
-
-      // Store reference
-      audioRef.current = audio;
-      setCurrentSound(sound);
-      setIsPlaying(true);
-
-    } catch (error) {
-      console.error('Error playing ambient sound:', error);
-    }
-  }, [volume]);
-
   const stopSound = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      audioRef.current.src = '';
+      audioRef.current = null;
+    }
+    setIsPlaying(false);
+    setCurrentSound(null);
+    setIsLoading(false);
+  }, []);
+
+  const playSound = useCallback(async (sound: AmbientSound) => {
+    if (isLoading) return; // Prevent multiple simultaneous loads
+
     try {
+      setIsLoading(true);
+      
+      // Clean up existing audio
       if (audioRef.current) {
         audioRef.current.pause();
-        audioRef.current.currentTime = 0;
+        audioRef.current.src = '';
         audioRef.current = null;
       }
 
-      setIsPlaying(false);
-      setCurrentSound(null);
+      // Create new audio element
+      const audio = new Audio();
+      audio.preload = 'auto';
+      audio.loop = true;
+      audio.volume = volumeRef.current;
+
+      // Set up event listeners
+      const handleCanPlay = () => {
+        audio.play().then(() => {
+          audioRef.current = audio;
+          setCurrentSound(sound);
+          setIsPlaying(true);
+          setIsLoading(false);
+        }).catch((error) => {
+          console.error('Error playing sound:', error);
+          setIsLoading(false);
+        });
+      };
+
+      const handleError = () => {
+        console.error('Error loading sound:', sound.audioUrl);
+        setIsLoading(false);
+      };
+
+      audio.addEventListener('canplaythrough', handleCanPlay, { once: true });
+      audio.addEventListener('error', handleError, { once: true });
+
+      // Start loading
+      audio.src = sound.audioUrl;
+      audio.load();
+
     } catch (error) {
-      console.error('Error stopping ambient sound:', error);
+      console.error('Error setting up ambient sound:', error);
+      setIsLoading(false);
     }
-  }, []);
+  }, [isLoading]);
 
   const toggleSound = useCallback((sound: AmbientSound) => {
+    if (isLoading) return;
+
     if (isPlaying && currentSound?.id === sound.id) {
       stopSound();
     } else {
       playSound(sound);
     }
-  }, [isPlaying, currentSound, playSound, stopSound]);
+  }, [isPlaying, currentSound, isLoading, playSound, stopSound]);
 
   const changeVolume = useCallback((newVolume: number) => {
     setVolume(newVolume);
+    volumeRef.current = newVolume;
     localStorage.setItem('ambientSoundVolume', newVolume.toString());
     
     if (audioRef.current) {
@@ -123,6 +154,7 @@ export const useAmbientSounds = () => {
     isPlaying,
     currentSound,
     volume,
+    isLoading,
     playSound,
     stopSound,
     toggleSound,
