@@ -82,32 +82,33 @@ export const useAmbientSounds = () => {
   const playSound = useCallback(async (sound: AmbientSound) => {
     if (isLoading) return; // Prevent multiple simultaneous loads
 
-    try {
-      setIsLoading(true);
-      
-      // Clean up existing audio
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.src = '';
-        audioRef.current = null;
-      }
+    setIsLoading(true);
 
+    // Clean up existing audio
+    if (audioRef.current) {
+      try { audioRef.current.pause(); } catch {}
+      audioRef.current.src = '';
+      audioRef.current = null;
+    }
+
+    try {
       // Create new audio element
       const audio = new Audio();
       audio.preload = 'auto';
       audio.loop = true;
       audio.volume = volumeRef.current;
 
-      // Set up event listeners
-      const handleCanPlay = () => {
+      let started = false;
+      const startPlayback = () => {
+        if (started) return;
         audio.play().then(() => {
+          started = true;
           audioRef.current = audio;
           setCurrentSound(sound);
           setIsPlaying(true);
           setIsLoading(false);
-        }).catch((error) => {
-          console.error('Error playing sound:', error);
-          setIsLoading(false);
+        }).catch(() => {
+          // Will retry on 'canplay' or timeout
         });
       };
 
@@ -116,12 +117,18 @@ export const useAmbientSounds = () => {
         setIsLoading(false);
       };
 
-      audio.addEventListener('canplaythrough', handleCanPlay, { once: true });
+      audio.addEventListener('canplay', startPlayback, { once: true });
       audio.addEventListener('error', handleError, { once: true });
 
       // Start loading
       audio.src = sound.audioUrl;
       audio.load();
+
+      // Immediate attempt (cached/fast starts)
+      startPlayback();
+
+      // Short retry to reduce perceived lag if 'canplay' is slow
+      setTimeout(() => startPlayback(), 300);
 
     } catch (error) {
       console.error('Error setting up ambient sound:', error);
