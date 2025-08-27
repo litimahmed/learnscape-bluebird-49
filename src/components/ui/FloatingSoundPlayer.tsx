@@ -10,7 +10,7 @@ import {
   Music,
   Square
 } from 'lucide-react';
-import { useAmbientSounds } from '@/hooks/useAmbientSounds';
+import { useAmbientSoundContext } from '@/contexts/AmbientSoundContext';
 
 export const FloatingSoundPlayer = () => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -20,12 +20,12 @@ export const FloatingSoundPlayer = () => {
     changeVolume, 
     isPlaying,
     stopSound 
-  } = useAmbientSounds();
+  } = useAmbientSoundContext();
 
   if (!isPlaying || !currentSound) return null;
 
   return (
-    <div className="fixed bottom-4 left-4 z-50 animate-in slide-in-from-bottom-2">
+    <div className="fixed bottom-4 right-4 z-50 animate-in slide-in-from-bottom-2">
       <Card className="bg-card/95 backdrop-blur-sm border shadow-lg max-w-[280px]">
         {/* Compact Header */}
         <div className="flex items-center gap-3 p-3">

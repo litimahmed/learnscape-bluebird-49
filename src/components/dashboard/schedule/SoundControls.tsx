@@ -15,7 +15,7 @@ import {
   CheckCircle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useAmbientSounds } from "@/hooks/useAmbientSounds";
+import { useAmbientSoundContext } from "@/contexts/AmbientSoundContext";
 
 export function SoundControls() {
   const {
@@ -29,7 +29,7 @@ export function SoundControls() {
     isSoundLoaded,
     isSoundLoading,
     allSoundsLoaded,
-  } = useAmbientSounds();
+  } = useAmbientSoundContext();
 
   const getSoundStatus = (soundId: string) => {
     if (isSoundLoading(soundId)) return 'loading';

@@ -7,7 +7,9 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 import Layout from "./components/Layout";
 import PageLoader from "./components/ui/PageLoader";
+import StudentDashboard from "./pages/StudentDashboard";
 import { TimerProvider } from "./contexts/TimerContext";
+import { AmbientSoundProvider } from "./contexts/AmbientSoundContext";
 import { FloatingTimer } from "./components/ui/FloatingTimer";
 import { FloatingSoundPlayer } from "./components/ui/FloatingSoundPlayer";
 import { useTimerContext } from "./contexts/TimerContext";
@@ -21,7 +23,7 @@ const Register = lazy(() => import("./pages/Register"));
 const HelpCenter = lazy(() => import("./pages/HelpCenter"));
 const Business = lazy(() => import("./pages/Business"));
 const Careers = lazy(() => import("./pages/Careers"));
-const StudentDashboard = lazy(() => import("./pages/StudentDashboard"));
+// StudentDashboard imported eagerly above
 const PartnerApplication = lazy(() => import("./pages/PartnerApplication"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
@@ -84,7 +86,9 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <TimerProvider>
-              <AppContent />
+              <AmbientSoundProvider>
+                <AppContent />
+              </AmbientSoundProvider>
             </TimerProvider>
           </BrowserRouter>
         </TooltipProvider>
