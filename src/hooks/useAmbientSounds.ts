@@ -42,172 +42,75 @@ const AMBIENT_SOUNDS: AmbientSound[] = [
 export const useAmbientSounds = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentSound, setCurrentSound] = useState<AmbientSound | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [volume, setVolume] = useState(() => {
     const savedVolume = localStorage.getItem('ambientSoundVolume');
     return savedVolume ? parseFloat(savedVolume) : 0.3;
   });
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const volumeRef = useRef(volume);
-  const playIdRef = useRef(0);
-  const pendingAudioRef = useRef<HTMLAudioElement | null>(null);
-  const loadTimeoutRef = useRef<number | null>(null);
-
-  // Keep volume ref in sync
-  useEffect(() => {
-    volumeRef.current = volume;
-  }, [volume]);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      // cancel any pending operations
-      playIdRef.current++;
-      if (loadTimeoutRef.current !== null) {
-        clearTimeout(loadTimeoutRef.current);
-        loadTimeoutRef.current = null;
-      }
-      if (pendingAudioRef.current) {
-        try { pendingAudioRef.current.pause(); } catch {}
-        pendingAudioRef.current.src = '';
-        pendingAudioRef.current = null;
-      }
-      if (audioRef.current) {
-        try { audioRef.current.pause(); } catch {}
-        audioRef.current.src = '';
-        audioRef.current = null;
-      }
+      stopSound();
     };
   }, []);
 
-  const stopSound = useCallback(() => {
-    // Invalidate any pending playback
-    playIdRef.current++;
-
-    // Clear any scheduled retry
-    if (loadTimeoutRef.current !== null) {
-      clearTimeout(loadTimeoutRef.current);
-      loadTimeoutRef.current = null;
-    }
-
-    // Stop pending audio (not yet started)
-    if (pendingAudioRef.current) {
-      try { pendingAudioRef.current.pause(); } catch {}
-      pendingAudioRef.current.currentTime = 0;
-      pendingAudioRef.current.src = '';
-      pendingAudioRef.current = null;
-    }
-
-    // Stop active audio
-    if (audioRef.current) {
-      try { audioRef.current.pause(); } catch {}
-      audioRef.current.currentTime = 0;
-      audioRef.current.src = '';
-      audioRef.current = null;
-    }
-
-    setIsPlaying(false);
-    setCurrentSound(null);
-    setIsLoading(false);
-  }, []);
-
   const playSound = useCallback(async (sound: AmbientSound) => {
-    // Invalidate any previous pending play and mark this call
-    const thisPlayId = ++playIdRef.current;
-
-    setIsLoading(true);
-
-    // Clear any scheduled retry from previous attempts
-    if (loadTimeoutRef.current !== null) {
-      clearTimeout(loadTimeoutRef.current);
-      loadTimeoutRef.current = null;
-    }
-
-    // Stop and clear any existing/pending audio
-    if (pendingAudioRef.current) {
-      try { pendingAudioRef.current.pause(); } catch {}
-      pendingAudioRef.current.src = '';
-      pendingAudioRef.current = null;
-    }
-    if (audioRef.current) {
-      try { audioRef.current.pause(); } catch {}
-      audioRef.current.src = '';
-      audioRef.current = null;
-    }
-
     try {
+      // Stop current sound
+      stopSound();
+
       // Create new audio element
-      const audio = new Audio();
-      audio.preload = 'auto';
+      const audio = new Audio(sound.audioUrl);
       audio.loop = true;
-      audio.volume = volumeRef.current;
-      pendingAudioRef.current = audio;
+      audio.volume = volume;
+      
+      // Wait for audio to be ready
+      await new Promise((resolve, reject) => {
+        audio.oncanplaythrough = resolve;
+        audio.onerror = reject;
+        audio.load();
+      });
 
-      let started = false;
-      const startPlayback = () => {
-        if (started) return;
-        if (playIdRef.current !== thisPlayId) return; // cancelled/switched
-        audio.play().then(() => {
-          if (playIdRef.current !== thisPlayId) {
-            // Play succeeded but already cancelled
-            try { audio.pause(); } catch {}
-            return;
-          }
-          started = true;
-          audioRef.current = audio;
-          pendingAudioRef.current = null;
-          setCurrentSound(sound);
-          setIsPlaying(true);
-          setIsLoading(false);
-          if (loadTimeoutRef.current !== null) {
-            clearTimeout(loadTimeoutRef.current);
-            loadTimeoutRef.current = null;
-          }
-        }).catch(() => {
-          // Will retry on 'canplay' or timeout
-        });
-      };
+      // Play the audio
+      await audio.play();
 
-      const handleError = () => {
-        if (playIdRef.current !== thisPlayId) return;
-        console.error('Error loading sound:', sound.audioUrl);
-        setIsLoading(false);
-      };
-
-      audio.addEventListener('canplay', startPlayback, { once: true });
-      audio.addEventListener('error', handleError, { once: true });
-
-      // Start loading
-      audio.src = sound.audioUrl;
-      audio.load();
-
-      // Immediate attempt (cached/fast starts)
-      startPlayback();
-
-      // Short retry to reduce perceived lag if 'canplay' is slow
-      loadTimeoutRef.current = window.setTimeout(() => startPlayback(), 300);
+      // Store reference
+      audioRef.current = audio;
+      setCurrentSound(sound);
+      setIsPlaying(true);
 
     } catch (error) {
-      if (playIdRef.current !== thisPlayId) return;
-      console.error('Error setting up ambient sound:', error);
-      setIsLoading(false);
+      console.error('Error playing ambient sound:', error);
+    }
+  }, [volume]);
+
+  const stopSound = useCallback(() => {
+    try {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+        audioRef.current = null;
+      }
+
+      setIsPlaying(false);
+      setCurrentSound(null);
+    } catch (error) {
+      console.error('Error stopping ambient sound:', error);
     }
   }, []);
 
   const toggleSound = useCallback((sound: AmbientSound) => {
-    // If same sound is playing, stop it
     if (isPlaying && currentSound?.id === sound.id) {
       stopSound();
-      return;
+    } else {
+      playSound(sound);
     }
-    // Otherwise start (this will cancel any pending/active audio safely)
-    playSound(sound);
   }, [isPlaying, currentSound, playSound, stopSound]);
 
   const changeVolume = useCallback((newVolume: number) => {
     setVolume(newVolume);
-    volumeRef.current = newVolume;
     localStorage.setItem('ambientSoundVolume', newVolume.toString());
     
     if (audioRef.current) {
@@ -220,7 +123,6 @@ export const useAmbientSounds = () => {
     isPlaying,
     currentSound,
     volume,
-    isLoading,
     playSound,
     stopSound,
     toggleSound,

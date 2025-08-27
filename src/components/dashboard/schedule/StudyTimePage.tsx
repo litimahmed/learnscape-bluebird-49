@@ -28,7 +28,7 @@ import { useTimerContext } from "@/contexts/TimerContext";
 
 export function StudyTimePage() {
   const { toast } = useToast();
-  const { setTimerData } = useTimerContext();
+  const timerContext = useTimerContext();
   const [technique, setTechnique] = useState<'pomodoro' | 'custom'>('pomodoro');
 
   const {
@@ -58,7 +58,6 @@ export function StudyTimePage() {
     isPlaying: isSoundPlaying,
     currentSound,
     volume,
-    isLoading: isSoundLoading,
     toggleSound,
     changeVolume,
     stopSound: stopAmbientSound
@@ -75,7 +74,7 @@ export function StudyTimePage() {
 
   // Update timer context whenever timer state changes
   useEffect(() => {
-    setTimerData({
+    timerContext.setTimerData({
       timeLeft,
       isActive: isRunning && !isPaused,
       technique: currentSession?.technique || technique,
@@ -83,7 +82,7 @@ export function StudyTimePage() {
       onPause: pauseTimer,
       onStop: stopTimer,
     });
-  }, [timeLeft, isRunning, isPaused, currentSession?.technique, technique, pauseTimer, stopTimer, setTimerData]);
+  }, [timeLeft, isRunning, isPaused, currentSession?.technique, technique, pauseTimer, stopTimer, timerContext]);
 
   const handleQuickStart = (type: 'focus' | 'short-break' | 'long-break', duration: number) => {
     startSession({
@@ -268,9 +267,6 @@ export function StudyTimePage() {
                   >
                     <span className="mr-2">{sound.icon}</span>
                     {sound.name}
-                    {isSoundLoading && currentSound?.id === sound.id && (
-                      <span className="ml-auto text-xs text-muted-foreground">Loading...</span>
-                    )}
                   </Button>
                 ))}
               </div>
