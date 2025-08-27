@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useStudyTimer } from "@/hooks/useStudyTimer";
-import { useAmbientSounds } from "@/hooks/useAmbientSounds";
+import { SoundControls } from "./SoundControls";
 import { useToast } from "@/hooks/use-toast";
 import { useTimerContext } from "@/contexts/TimerContext";
 
@@ -53,15 +53,6 @@ export function StudyTimePage() {
     notificationsEnabled: true,
   });
 
-  const {
-    sounds,
-    isPlaying: isSoundPlaying,
-    currentSound,
-    volume,
-    toggleSound,
-    changeVolume,
-    stopSound: stopAmbientSound
-  } = useAmbientSounds();
 
   const todayStats = getTodaysStats();
   const progressPercentage = timeLeft > 0 && currentSession 
@@ -236,54 +227,9 @@ export function StudyTimePage() {
           </Card>
         </div>
 
-        {/* Ambient Sounds Sidebar */}
+        {/* Professional Sound Controls */}
         <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Music className="w-5 h-5" />
-                  <span>Focus Sounds</span>
-                </div>
-                {isSoundPlaying && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={stopAmbientSound}
-                  >
-                    <VolumeX className="w-4 h-4" />
-                  </Button>
-                )}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                {sounds.map(sound => (
-                  <Button
-                    key={sound.id}
-                    variant={currentSound?.id === sound.id ? "default" : "ghost"}
-                    onClick={() => toggleSound(sound)}
-                    className="w-full justify-start"
-                  >
-                    <span className="mr-2">{sound.icon}</span>
-                    {sound.name}
-                  </Button>
-                ))}
-              </div>
-              
-              {isSoundPlaying && (
-                <div className="space-y-2">
-                  <Label className="text-sm">Volume</Label>
-                  <Slider
-                    value={[volume * 100]}
-                    onValueChange={([value]) => changeVolume(value / 100)}
-                    max={100}
-                    step={1}
-                  />
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <SoundControls />
 
           <Card>
             <CardHeader>
