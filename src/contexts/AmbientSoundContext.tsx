@@ -1,5 +1,5 @@
 import { createContext, useContext, ReactNode } from 'react';
-import { useAmbientSounds } from '@/hooks/useAmbientSounds';
+import { useAmbientSounds } from '../hooks/useAmbientSounds';
 
 interface AmbientSoundContextType {
   sounds: Array<{

@@ -3,12 +3,11 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 import Layout from "./components/Layout";
 import PageLoader from "./components/ui/PageLoader";
 import { TimerProvider } from "./contexts/TimerContext";
-import { AmbientSoundProvider } from "./contexts/AmbientSoundContext";
 import { FloatingTimer } from "./components/ui/FloatingTimer";
 import { FloatingSoundPlayer } from "./components/ui/FloatingSoundPlayer";
 import { useTimerContext } from "./contexts/TimerContext";
@@ -29,7 +28,6 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const queryClient = new QueryClient();
 
 const AppContent = () => {
-  const location = useLocation();
   const timerContext = useTimerContext();
 
   return (
@@ -86,9 +84,7 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <TimerProvider>
-              <AmbientSoundProvider>
-                <AppContent />
-              </AmbientSoundProvider>
+              <AppContent />
             </TimerProvider>
           </BrowserRouter>
         </TooltipProvider>

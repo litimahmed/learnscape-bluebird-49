@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { Badge } from '@/components/ui/badge';
 import { 
   Volume2, 
   VolumeX, 
@@ -11,7 +10,7 @@ import {
   Music,
   Square
 } from 'lucide-react';
-import { useAmbientSoundContext } from '@/contexts/AmbientSoundContext';
+import { useAmbientSounds } from '@/hooks/useAmbientSounds';
 
 export const FloatingSoundPlayer = () => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -21,7 +20,7 @@ export const FloatingSoundPlayer = () => {
     changeVolume, 
     isPlaying,
     stopSound 
-  } = useAmbientSoundContext();
+  } = useAmbientSounds();
 
   if (!isPlaying || !currentSound) return null;
 
