@@ -8,7 +8,9 @@ import { HelmetProvider } from "react-helmet-async";
 import Layout from "./components/Layout";
 import PageLoader from "./components/ui/PageLoader";
 import { TimerProvider } from "./contexts/TimerContext";
+import { AmbientSoundProvider } from "./contexts/AmbientSoundContext";
 import { FloatingTimer } from "./components/ui/FloatingTimer";
+import { FloatingSoundPlayer } from "./components/ui/FloatingSoundPlayer";
 import { useTimerContext } from "./contexts/TimerContext";
 
 // Lazy-loaded page components
@@ -69,24 +71,29 @@ const AppContent = () => {
           onClose={timerContext.hideFloating}
         />
       )}
+
+      {/* Floating Sound Player */}
+      <FloatingSoundPlayer />
     </>
   );
 };
 
 const App = () => (
-  <HelmetProvider>
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <TimerProvider>
-            <AppContent />
-          </TimerProvider>
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
-  </HelmetProvider>
+    <HelmetProvider>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <TimerProvider>
+              <AmbientSoundProvider>
+                <AppContent />
+              </AmbientSoundProvider>
+            </TimerProvider>
+          </BrowserRouter>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </HelmetProvider>
 );
 
 export default App;
