@@ -128,7 +128,7 @@ export function SoundControls() {
                         ) : status === 'not-loaded' ? (
                           <VolumeX className="w-4 h-4 text-destructive" />
                         ) : (
-                          <span className="text-lg">{sound.icon}</span>
+                          <Waves className="w-4 h-4" />
                         )}
                       </div>
                       <div className="text-left">

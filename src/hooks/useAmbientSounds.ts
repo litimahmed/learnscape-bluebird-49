@@ -16,31 +16,31 @@ interface LoadedSound extends AmbientSound {
 const AMBIENT_SOUNDS: AmbientSound[] = [
   {
     id: 'bird-sound',
-    name: 'Birds',
-    icon: '🐦',
-    audioUrl: '/sounds/ambients/bird sound.mp3',
-    description: 'Gentle bird chirping'
+    name: 'Tranquil Garden Birds',
+    icon: '',
+    audioUrl: '/sounds/ambients/bird%20sound.mp3',
+    description: 'Gentle bird chirping for deep focus'
   },
   {
     id: 'bird-sound-2',
-    name: 'Forest Birds',
-    icon: '🌲',
-    audioUrl: '/sounds/ambients/bird sound 2.mp3',
-    description: 'Forest ambience with birds'
+    name: 'Forest Canopy Serenity',
+    icon: '',
+    audioUrl: '/sounds/ambients/bird%20sound%202.mp3',
+    description: 'Peaceful forest ambience with distant birds'
   },
   {
     id: 'bird-sound-3',
-    name: 'Morning Birds',
-    icon: '🌅',
-    audioUrl: '/sounds/ambients/bird sound 3 (2).mp3',
-    description: 'Morning bird sounds'
+    name: 'Dawn Chorus Meditation',
+    icon: '',
+    audioUrl: '/sounds/ambients/bird%20sound%203%20%282%29.mp3',
+    description: 'Soothing morning bird symphony'
   },
   {
     id: 'rain',
-    name: 'Rain',
-    icon: '🌧️',
+    name: 'Gentle Rain Embrace',
+    icon: '',
     audioUrl: '/sounds/ambients/rain.mp3',
-    description: 'Soft rainfall for focus'
+    description: 'Soft rainfall for ultimate concentration'
   }
 ];
 
