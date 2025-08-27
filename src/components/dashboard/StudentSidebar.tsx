@@ -15,10 +15,10 @@ import {
   FileText,
   Clock,
   Star,
-  Zap,
   Target,
   Bookmark
 } from "lucide-react";
+import formacadLogo from "@/assets/formacad-icon-logo.png";
 import {
   Sidebar,
   SidebarContent,
@@ -77,8 +77,8 @@ export function StudentSidebar() {
           {!collapsed ? (
             <>
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center shadow-lg">
-                  <Zap className="w-4 h-4 text-primary-foreground" />
+                <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center shadow-lg p-1">
+                  <img src={formacadLogo} alt="FormAcad" className="w-full h-full object-contain" />
                 </div>
                 <div>
                   <h3 className="font-bold text-foreground text-lg">LearnHub</h3>
@@ -94,8 +94,8 @@ export function StudentSidebar() {
             </>
           ) : (
             <div className="h-11 w-full flex items-center justify-center">
-              <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center shadow-lg">
-                <Zap className="w-4 h-4 text-primary-foreground" />
+              <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center shadow-lg p-1">
+                <img src={formacadLogo} alt="FormAcad" className="w-full h-full object-contain" />
               </div>
             </div>
           )}
